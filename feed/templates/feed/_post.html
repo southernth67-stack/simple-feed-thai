@@ -1,0 +1,133 @@
+{% load feed_extras %}
+{% for post in posts %}
+<div class="card post-card">
+    <div class="card-body">
+        {% if post.is_repost %}
+            <div class="small text-muted mb-2">
+                <i class="bi bi-share-fill"></i> <a href="{% url 'profile' username=post.author.username %}" class="text-decoration-none" style="color:var(--text-muted)">{{ post.author.username }}</a> แชร์โพสต์
+            </div>
+        {% endif %}
+        <div class="d-flex align-items-start mb-2">
+            <a href="{% url 'profile' username=post.author.username %}">
+                {% if post.author.profile.avatar %}
+                    <img src="{{ post.author.profile.avatar.url }}" class="avatar-sm me-2">
+                {% else %}
+                    <i class="bi bi-person-circle fs-3 me-2" style="color:var(--text-muted)"></i>
+                {% endif %}
+            </a>
+            <div class="flex-grow-1">
+                <a href="{% url 'profile' username=post.author.username %}" class="text-decoration-none fw-bold" style="color:var(--text)">
+                    {{ post.author.username }}
+                </a>
+                <div class="timestamp">{{ post.created_at|date:"j M Y H:i" }}{% if post.is_edited %} <i class="bi bi-pencil-fill" title="แก้ไขแล้ว"></i>{% endif %}</div>
+            </div>
+            {% if post.author == user %}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary border-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'edit_post' post.id %}"><i class="bi bi-pencil"></i> แก้ไข</a></li>
+                        <li><form method="post" action="{% url 'delete_post' post.id %}" onsubmit="return confirm('ลบโพสต์นี้?')">{% csrf_token %}<button class="dropdown-item text-danger" type="submit"><i class="bi bi-trash"></i> ลบ</button></form></li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if post.is_repost and post.original_post %}
+            <div class="card ms-4 mt-1 mb-2" style="background:var(--comment-bg);border-color:var(--border-color);">
+                <div class="card-body py-2 px-3">
+                    <a href="{% url 'profile' username=post.original_post.author.username %}" class="text-decoration-none fw-bold small" style="color:var(--text)">{{ post.original_post.author.username }}</a>
+                    <p class="mb-1 small">{{ post.original_post.text|truncatewords:30|hashtag_linkify|mention_linkify }}</p>
+                    {% if post.original_post.image %}<img src="{{ post.original_post.image.url }}" class="post-image" style="max-height:200px;" alt="">{% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <p class="mb-2">{{ post.text|urlize|hashtag_linkify|mention_linkify }}</p>
+
+        {% if post.image %}
+            <img src="{{ post.image.url }}" class="post-image" alt="รูปโพสต์">
+        {% endif %}
+
+        {% if post.poll %}
+            <div class="card mt-2" style="background:var(--comment-bg);border-color:var(--border-color);">
+                <div class="card-body py-2 px-3">
+                    <p class="fw-bold mb-2 small">{{ post.poll.question }}</p>
+                    {% for opt in post.poll.options.all %}
+                        {% with opt_count=opt.votes.count %}
+                        <div class="mb-1 poll-option" data-option-id="{{ opt.id }}" data-post-id="{{ post.id }}" style="cursor:pointer;">
+                            <div class="d-flex justify-content-between small">
+                                <span>{{ opt.text }}</span>
+                                <span>{{ opt_count }} เสียง</span>
+                            </div>
+                            <div class="progress" style="height:8px;">
+                                <div class="progress-bar" role="progressbar" style="width:100%;background:linear-gradient(135deg,var(--btn-primary-start),var(--btn-primary-end));"></div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="d-flex align-items-center gap-2 mt-2 mb-2 flex-wrap">
+            {% with reaction=user_reactions|get_item:post.id %}
+            <div class="reaction-wrap" data-post-id="{{ post.id }}">
+                <div class="reaction-bar">
+                    <button class="reaction-emoji" data-type="like">👍</button>
+                    <button class="reaction-emoji" data-type="love">😍</button>
+                    <button class="reaction-emoji" data-type="laugh">😂</button>
+                    <button class="reaction-emoji" data-type="wow">😮</button>
+                    <button class="reaction-emoji" data-type="sad">😢</button>
+                    <button class="reaction-emoji" data-type="angry">😡</button>
+                </div>
+                <button class="btn btn-sm like-btn {% if reaction %}liked{% endif %}"
+                        data-post-id="{{ post.id }}">
+                    <span class="reaction-icon">{{ reaction|to_emoji }}</span>
+                    <span class="reaction-count-{{ post.id }}">{{ post.reactions.count }}</span>
+                </button>
+            </div>
+            {% endwith %}
+            <small class="text-muted comment-toggle" data-post-id="{{ post.id }}" style="cursor:pointer;">
+                <i class="bi bi-chat"></i> {{ post.comments.count }}
+            </small>
+            <small class="text-muted bookmark-btn" data-post-id="{{ post.id }}" style="cursor:pointer;">
+                <i class="bi bi-bookmark{% if post.id in bookmarked_ids %}-fill{% endif %}"></i>
+            </small>
+            <small class="text-muted" style="cursor:pointer;" onclick="window.location.href='{% url 'create_repost' post.id %}'">
+                <i class="bi bi-share-fill"></i>
+            </small>
+        </div>
+
+        <div class="comments-section" id="comments-{{ post.id }}" style="display:none;">
+            <hr>
+            {% for comment in post.comments.all %}
+                <div class="d-flex align-items-start mb-2">
+                    <a href="{% url 'profile' username=comment.author.username %}">
+                        {% if comment.author.profile.avatar %}
+                            <img src="{{ comment.author.profile.avatar.url }}" class="avatar-sm me-2" style="width:30px;height:30px;">
+                        {% else %}
+                            <i class="bi bi-person-circle me-2" style="font-size:1.2rem;color:var(--text-muted)"></i>
+                        {% endif %}
+                    </a>
+                    <div class="comment-box flex-grow-1">
+                        <a href="{% url 'profile' username=comment.author.username %}" class="text-decoration-none fw-bold small" style="color:var(--text)">
+                            {{ comment.author.username }}
+                        </a>
+                        <span class="small">{{ comment.text }}</span>
+                        <div class="timestamp">{{ comment.created_at|date:"j M Y H:i" }}</div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted small mb-2">ยังไม่มีความคิดเห็น</p>
+            {% endfor %}
+
+            <form method="post" action="{% url 'add_comment' post.id %}" class="d-flex mt-2">
+                {% csrf_token %}
+                {{ comment_form.text }}
+                <button type="submit" class="btn btn-outline-primary btn-sm ms-2">ส่ง</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% empty %}
+{% endfor %}

@@ -1,0 +1,29 @@
+{% extends 'feed/base.html' %}
+{% block title %} - สมัครสมาชิก{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">สมัครสมาชิก</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small">{{ field.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100">สมัครสมาชิก</button>
+                </form>
+                <p class="text-center mt-3 mb-0">
+                    มีบัญชีอยู่แล้ว? <a href="{% url 'login' %}">เข้าสู่ระบบ</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

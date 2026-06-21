@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Feed{% block title %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --text-muted: #6c757d;
+            --comment-bg: #f0f2f5;
+            --shadow: rgba(0,0,0,0.08);
+            --navbar-start: #667eea;
+            --navbar-end: #764ba2;
+            --btn-primary-start: #667eea;
+            --btn-primary-end: #764ba2;
+            --border-color: #e9ecef;
+            --input-bg: #ffffff;
+            --like-color: #e74c3c;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f0f23;
+            --card-bg: #1a1a2e;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --comment-bg: #25253e;
+            --shadow: rgba(0,0,0,0.3);
+            --border-color: #2d2d4a;
+            --input-bg: #25253e;
+        }
+
+        * { transition: background-color var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition); }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--navbar-start), var(--navbar-end)) !important;
+            box-shadow: 0 2px 20px rgba(102, 126, 234, 0.3);
+        }
+        .navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
+
+        .card {
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            box-shadow: 0 2px 12px var(--shadow);
+            animation: fadeInUp 0.4s ease both;
+        }
+        .card-body { padding: 1.25rem; }
+        .post-card { margin-bottom: 1rem; border-radius: 16px; }
+        .post-card:nth-child(2) { animation-delay: 0.05s; }
+        .post-card:nth-child(3) { animation-delay: 0.1s; }
+        .post-card:nth-child(4) { animation-delay: 0.15s; }
+        .post-card:nth-child(5) { animation-delay: 0.2s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(1); }
+            75% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .heart-animate { animation: heartBeat 0.4s ease; }
+
+        .avatar-sm { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+        .avatar-md { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border-color); }
+        .avatar-lg { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--border-color); }
+
+        .comment-box {
+            background: var(--comment-bg);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+        }
+        .timestamp { font-size: 0.75rem; color: var(--text-muted); }
+        .profile-header {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        textarea { resize: none; background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border-color) !important; }
+        textarea:focus { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25) !important; }
+        .messages { margin-top: 0.5rem; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--btn-primary-start), var(--btn-primary-end));
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all var(--transition);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-outline-primary {
+            border-color: var(--btn-primary-start);
+            color: var(--btn-primary-start);
+            border-radius: 10px;
+        }
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, var(--btn-primary-start), var(--btn-primary-end));
+            border-color: transparent;
+            color: white;
+        }
+        .btn-danger { border-radius: 10px; }
+        .btn-outline-danger { border-radius: 10px; }
+
+        .like-btn { cursor: pointer; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.9rem; transition: all var(--transition); }
+        .like-btn:hover { transform: scale(1.05); }
+        .like-btn.liked { color: var(--like-color); border-color: var(--like-color); background: rgba(231, 76, 60, 0.1); }
+        .reaction-wrap { position: relative; display: inline-block; }
+        .reaction-wrap .reaction-bar {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 30px; padding: 4px 8px;
+            display: flex; gap: 2px;
+            box-shadow: 0 4px 20px var(--shadow);
+            opacity: 0; visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateX(-50%) translateY(8px);
+            white-space: nowrap; z-index: 10;
+        }
+        .reaction-wrap:hover .reaction-bar {
+            opacity: 1; visibility: visible;
+            transform: translateX(-50%) translateY(-4px);
+        }
+        .reaction-bar .reaction-emoji {
+            font-size: 1.5rem; padding: 2px 4px; border: none; background: none;
+            cursor: pointer; transition: all 0.15s ease;
+            line-height: 1; border-radius: 50%;
+        }
+        .reaction-bar .reaction-emoji:hover { transform: scale(1.4); }
+        .reaction-bar .reaction-emoji:active { transform: scale(1.1); }
+        .nav-search { position: relative; }
+        .hashtag-link { color: var(--btn-primary-start); text-decoration: none; font-weight: 500; }
+        .hashtag-link:hover { text-decoration: underline; }
+
+        .dark-toggle {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 1.1rem;
+            transition: all var(--transition);
+        }
+        .dark-toggle:hover {
+            background: rgba(255,255,255,0.25);
+            transform: rotate(20deg);
+        }
+
+        .post-image {
+            border-radius: 12px;
+            max-height: 400px;
+            width: 100%;
+            object-fit: cover;
+            margin-top: 0.5rem;
+        }
+
+        .form-control[type="file"] {
+            background: var(--input-bg) !important;
+            color: var(--text) !important;
+            border-color: var(--border-color) !important;
+            border-radius: 10px;
+            padding: 0.375rem 0.75rem;
+        }
+        .form-control[type="file"]::file-selector-button {
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--btn-primary-start), var(--btn-primary-end));
+            color: white;
+            padding: 0.25rem 0.75rem;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+
+        .alert { border-radius: 12px; }
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; }
+        .toast-msg { border-radius: 12px; box-shadow: 0 4px 20px var(--shadow); background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text); min-width: 280px; }
+        .nav-link { font-weight: 500; position: relative; }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            width: 0; height: 2px;
+            background: white;
+            transition: all var(--transition);
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after { width: 80%; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand text-white" href="{% url 'feed' %}">
+                <i class="bi bi-chat-dots-fill"></i> Simple Feed
+            </a>
+            <div class="d-flex align-items-center gap-2 order-lg-last">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'notifications' %}" class="text-white position-relative text-decoration-none" id="notif-bell">
+                        <i class="bi bi-bell-fill fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notif-badge" style="font-size:0.6rem;{% if unread_count == 0 %}display:none;{% endif %}">
+                            {{ unread_count }}
+                        </span>
+                    </a>
+                    <a href="{% url 'profile' username=user.username %}" class="text-white text-decoration-none d-none d-md-inline">
+                        <i class="bi bi-person-circle"></i> {{ user.username }}
+                    </a>
+                {% endif %}
+                <button class="dark-toggle" id="darkModeToggle" title="สลับโหมดมืด/สว่าง">
+                    <i class="bi bi-moon-fill" id="darkIcon"></i>
+                </button>
+            </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item" style="min-width:200px;">
+                            <div class="nav-search">
+                                <input type="text" class="form-control form-control-sm" id="search-input" placeholder="🔍 ค้นหาผู้ใช้ หรือ โพสต์..." style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:20px;padding:0.25rem 1rem;">
+                                <div id="search-results" class="card position-absolute w-100 mt-1" style="display:none;z-index:1000;background:var(--card-bg);border-color:var(--border-color);"></div>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-white" href="{% url 'profile' username=user.username %}">
+                                <i class="bi bi-person-circle"></i> {{ user.username }}
+                            </a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-white" href="{% url 'notifications' %}">
+                                <i class="bi bi-bell-fill"></i> แจ้งเตือน
+                                {% if unread_count %}<span class="badge bg-danger ms-1">{{ unread_count }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item d-none d-md-inline">
+                            <a class="nav-link text-white" href="{% url 'explore' %}">ค้นพบ</a>
+                        </li>
+                        <li class="nav-item d-none d-md-inline">
+                            <a class="nav-link text-white" href="{% url 'trending' %}">มาแรง</a>
+                        </li>
+                        <li class="nav-item d-none d-md-inline">
+                            <a class="nav-link text-white" href="{% url 'bookmarks' %}">ที่บันทึก</a>
+                        </li>
+                        <li class="nav-item d-none d-md-inline">
+                            <a class="nav-link text-white" href="{% url 'inbox' %}">ข้อความ</a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-white" href="{% url 'explore' %}"><i class="bi bi-compass"></i> ค้นพบ</a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-white" href="{% url 'trending' %}"><i class="bi bi-graph-up"></i> มาแรง</a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-white" href="{% url 'bookmarks' %}"><i class="bi bi-bookmark-fill"></i> ที่บันทึก</a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-white" href="{% url 'inbox' %}"><i class="bi bi-envelope-fill"></i> ข้อความ</a>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link text-white btn btn-link border-0">
+                                    <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'login' %}">เข้าสู่ระบบ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'register' %}">สมัครสมาชิก</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-none" data-toast="{{ message }}" data-tags="{{ message.tags }}">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function() {
+            const toggle = document.getElementById('darkModeToggle');
+            const icon = document.getElementById('darkIcon');
+            const html = document.documentElement;
+            const stored = localStorage.getItem('theme');
+            if (stored === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+                icon.classList.replace('bi-moon-fill', 'bi-sun-fill');
+            }
+            toggle.addEventListener('click', function() {
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                if (isDark) {
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                    icon.classList.replace('bi-sun-fill', 'bi-moon-fill');
+                } else {
+                    html.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    icon.classList.replace('bi-moon-fill', 'bi-sun-fill');
+                }
+            });
+        })();
+
+        // Live Search
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        if (searchInput) {
+            let timer;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(timer);
+                const q = this.value.trim();
+                if (q.length < 1) { searchResults.style.display = 'none'; return; }
+                timer = setTimeout(async () => {
+                    try {
+                        const r = await fetch(`/search/?q=${encodeURIComponent(q)}`);
+                        const data = await r.json();
+                        if (!data.users || !data.posts) return;
+                        if (data.users.length === 0 && data.posts.length === 0) {
+                            searchResults.style.display = 'none';
+                            return;
+                        }
+                        let html = '<div class="list-group list-group-flush">';
+                        data.users.forEach(u => {
+                            const avatar = u.avatar ? `<img src="${u.avatar}" class="avatar-sm me-2" style="width:24px;height:24px;">` : '<i class="bi bi-person-circle me-2"></i>';
+                            html += `<a href="/profile/${u.username}/" class="list-group-item list-group-item-action d-flex align-items-center" style="background:var(--card-bg);color:var(--text);border-color:var(--border-color);">${avatar}${u.username}</a>`;
+                        });
+                        data.posts.forEach(p => {
+                            html += `<a href="/" class="list-group-item list-group-item-action" style="background:var(--card-bg);color:var(--text);border-color:var(--border-color);"><small>📝 ${p.author}: ${p.text}</small></a>`;
+                        });
+                        html += '</div>';
+                        searchResults.innerHTML = html;
+                        searchResults.style.display = 'block';
+                    } catch(e) {}
+                }, 300);
+            });
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+
+        // Notification badge refresh
+        setInterval(async () => {
+            const badge = document.getElementById('notif-badge');
+            if (!badge) return;
+            try {
+                const r = await fetch('/notifications/unread-count/');
+                const data = await r.json();
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? '' : 'none';
+            } catch(e) {}
+        }, 15000);
+
+        // Bookmark toggle
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.bookmark-btn');
+            if (!btn) return;
+            const postId = btn.dataset.postId;
+            const icon = btn.querySelector('i');
+            fetch(`/post/${postId}/bookmark/`).then(r => r.json()).then(data => {
+                if (data.bookmarked) {
+                    icon.classList.replace('bi-bookmark', 'bi-bookmark-fill');
+                } else {
+                    icon.classList.replace('bi-bookmark-fill', 'bi-bookmark');
+                }
+            }).catch(() => {});
+        });
+
+        // Poll vote
+        document.addEventListener('click', function(e) {
+            const opt = e.target.closest('.poll-option');
+            if (!opt) return;
+            const optionId = opt.dataset.optionId;
+            const postId = opt.dataset.postId;
+            const formData = new FormData();
+            formData.append('option_id', optionId);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            fetch(`/post/${postId}/poll/vote/`, { method: 'POST', body: formData })
+                .then(r => r.json()).then(data => {
+                    if (data.ok) location.reload();
+                }).catch(() => {});
+        });
+
+        // Toast notifications
+        (function() {
+            const container = document.getElementById('toastContainer');
+            document.querySelectorAll('[data-toast]').forEach(el => {
+                const msg = el.dataset.toast;
+                const tags = el.dataset.tags;
+                const icon = tags === 'success' ? 'bi-check-circle-fill text-success' : tags === 'error' ? 'bi-x-circle-fill text-danger' : 'bi-info-circle-fill text-primary';
+                const toast = document.createElement('div');
+                toast.className = 'toast-msg d-flex align-items-center p-3 mb-2';
+                toast.innerHTML = `<i class="bi ${icon} me-2 fs-5"></i><span class="flex-grow-1 small">${msg}</span><button type="button" class="btn-close btn-close-sm" onclick="this.closest('.toast-msg').remove()"></button>`;
+                container.appendChild(toast);
+                setTimeout(() => { if (toast.parentNode) { toast.style.transition = 'opacity 0.3s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); } }, 4000);
+            });
+        })();
+    </script>
+</body>
+</html>

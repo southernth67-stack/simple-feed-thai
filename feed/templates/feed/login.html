@@ -1,0 +1,31 @@
+{% extends 'feed/base.html' %}
+{% block title %} - เข้าสู่ระบบ{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">เข้าสู่ระบบ</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อผู้ใช้</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รหัสผ่าน</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    {% if form.errors %}
+                        <div class="text-danger small mb-3">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
+                </form>
+                <p class="text-center mt-3 mb-0">
+                    ยังไม่มีบัญชี? <a href="{% url 'register' %}">สมัครสมาชิก</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

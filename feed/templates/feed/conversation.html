@@ -1,0 +1,68 @@
+{% extends 'feed/base.html' %}
+{% block title %} - ข้อความ{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card mb-3">
+            <div class="card-body d-flex align-items-center">
+                <a href="{% url 'profile' username=other.username %}" class="text-decoration-none d-flex align-items-center" style="color:var(--text);">
+                    {% if other.profile.avatar %}
+                        <img src="{{ other.profile.avatar.url }}" class="avatar-sm me-2">
+                    {% else %}
+                        <i class="bi bi-person-circle fs-3 me-2" style="color:var(--text-muted)"></i>
+                    {% endif %}
+                    <strong class="fs-5">{{ other.username }}</strong>
+                </a>
+            </div>
+        </div>
+
+        <div id="messages" class="card mb-3" style="height:400px;overflow-y:auto;">
+            <div class="card-body d-flex flex-column">
+                {% for message in conversation.messages.all %}
+                    {% if message.sender == request.user %}
+                        <div class="d-flex justify-content-end mb-2">
+                            <div class="comment-box" style="max-width:75%;background:linear-gradient(135deg,var(--btn-primary-start),var(--btn-primary-end));color:white;">
+                                <div>{{ message.text }}</div>
+                                <div class="timestamp" style="color:rgba(255,255,255,0.7);font-size:0.65rem;">{{ message.created_at|date:"j M Y H:i" }}</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="d-flex justify-content-start mb-2">
+                            <div class="comment-box" style="max-width:75%;">
+                                <div>{{ message.text }}</div>
+                                <div class="timestamp" style="font-size:0.65rem;">{{ message.created_at|date:"j M Y H:i" }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="text-center text-muted my-auto">
+                        <i class="bi bi-chat-dots fs-1"></i>
+                        <p class="mt-2">เริ่มต้นแชทกันเลย!</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="/conversation/{{ conversation.id }}/send/">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        {{ form.text }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> ส่ง
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.onload = function() {
+    var el = document.getElementById('messages');
+    if (el) el.scrollTop = el.scrollHeight;
+};
+</script>
+{% endblock %}

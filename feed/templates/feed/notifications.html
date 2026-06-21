@@ -1,0 +1,77 @@
+{% extends 'feed/base.html' %}
+{% block title %} - การแจ้งเตือน{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4><i class="bi bi-bell-fill"></i> การแจ้งเตือน</h4>
+            </div>
+        </div>
+
+        {% for notif in notifications %}
+            {% if notif.verb == 'follow' or notif.verb == 'message' %}
+                <div class="card post-card {% if not notif.is_read %}border-primary{% endif %}"
+                     data-url="{% if notif.verb == 'message' %}{% url 'inbox' %}{% else %}{% url 'profile' username=notif.actor.username %}{% endif %}"
+                     onclick="navigateNotif(this.dataset.url, {{ notif.id }})"
+                     style="cursor:pointer;">
+            {% else %}
+                <div class="card post-card {% if not notif.is_read %}border-primary{% endif %}"
+                     data-url="{% url 'feed' %}"
+                     onclick="navigateNotif(this.dataset.url, {{ notif.id }})"
+                     style="cursor:pointer;">
+            {% endif %}
+                <div class="card-body d-flex align-items-center gap-3">
+                    {% if notif.verb == 'reaction' %}
+                        <span style="font-size:1.5rem;">{{ notif.get_reaction_type_display }}</span>
+                    {% elif notif.verb == 'comment' %}
+                        <span style="font-size:1.5rem;">💬</span>
+                    {% elif notif.verb == 'follow' %}
+                        <span style="font-size:1.5rem;">👤</span>
+                    {% elif notif.verb == 'mention' %}
+                        <span style="font-size:1.5rem;">@</span>
+                    {% elif notif.verb == 'repost' %}
+                        <span style="font-size:1.5rem;">🔁</span>
+                    {% elif notif.verb == 'message' %}
+                        <span style="font-size:1.5rem;">✉️</span>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <strong>{{ notif.actor.username }}</strong>
+                        {% if notif.verb == 'reaction' %}
+                            มีการเกิดปฏิกิริยากับโพสต์ของคุณ
+                        {% elif notif.verb == 'comment' %}
+                            แสดงความคิดเห็นในโพสต์ของคุณ
+                        {% elif notif.verb == 'follow' %}
+                            กำลังติดตามคุณ
+                        {% elif notif.verb == 'mention' %}
+                            กล่าวถึงคุณในโพสต์
+                        {% elif notif.verb == 'repost' %}
+                            แชร์โพสต์ของคุณ
+                        {% elif notif.verb == 'message' %}
+                            ส่งข้อความถึงคุณ
+                        {% endif %}
+                        <div class="timestamp">{{ notif.created_at|timesince }} ที่แล้ว</div>
+                    </div>
+                    {% if not notif.is_read %}
+                        <span class="badge bg-primary rounded-pill">ใหม่</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-bell-slash fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">ไม่มีการแจ้งเตือน</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function navigateNotif(url, id) {
+    fetch(`/notifications/read/${id}/`);
+    window.location.href = url;
+}
+</script>
+{% endblock %}

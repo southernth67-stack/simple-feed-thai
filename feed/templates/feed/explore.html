@@ -1,0 +1,160 @@
+{% extends 'feed/base.html' %}
+{% load feed_extras %}
+{% block title %} - ค้นพบ{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5><i class="bi bi-pencil-square"></i> โพสต์อะไรสักหน่อย</h5>
+                <form method="post" action="/post/new/" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ post_form.text }}
+                    <div class="mt-2">
+                        {{ post_form.image }}
+                        <div id="imagePreview" class="mt-2" style="display:none;position:relative;">
+                            <img class="post-image" style="max-height:200px;width:auto;">
+                            <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-1 rounded-circle" onclick="clearImagePreview()" style="width:28px;height:28px;">&times;</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">
+                        <i class="bi bi-send"></i> โพสต์
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="posts-container">
+            {% include 'feed/_post.html' %}
+        </div>
+
+        {% if has_more %}
+            <div id="load-more-trigger" class="text-center py-3" data-hashtag="">
+                <div class="spinner-border text-primary" role="status" style="display:none;" id="load-spinner">
+                    <span class="visually-hidden">กำลังโหลด...</span>
+                </div>
+            </div>
+        {% endif %}
+
+        <div id="empty-state" style="display:none;">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">ยังไม่มีโพสต์ — เป็นคนแรกที่โพสต์เลย!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5><i class="bi bi-hash"></i> แฮชแท็กมาแรง</h5>
+                {% if tags %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for tag in tags %}
+                            <a href="/hashtag/{{ tag.name }}/" class="text-decoration-none d-flex justify-content-between align-items-center" style="color:var(--text);">
+                                <span class="hashtag-link">#{{ tag.name }}</span>
+                                <small class="text-muted">{{ tag.post_count }} โพสต์</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">ยังไม่มีแฮชแท็ก</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const reactionEmojis = { like: '👍', love: '😍', laugh: '😂', wow: '😮', sad: '😢', angry: '😡' };
+const fileInput = document.querySelector('input[type="file"]');
+const previewDiv = document.getElementById('imagePreview');
+if (fileInput && previewDiv) {
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) { previewDiv.style.display = 'none'; return; }
+        const reader = new FileReader();
+        reader.onload = function(e) { previewDiv.querySelector('img').src = e.target.result; previewDiv.style.display = 'block'; };
+        reader.readAsDataURL(file);
+    });
+}
+function clearImagePreview() {
+    const img = previewDiv.querySelector('img');
+    img.src = ''; previewDiv.style.display = 'none';
+    if (fileInput) fileInput.value = '';
+}
+
+document.addEventListener('click', function(e) {
+    const target = e.target.closest('.reaction-emoji');
+    if (!target) return;
+    e.preventDefault();
+    const wrap = target.closest('.reaction-wrap');
+    if (!wrap) return;
+    const postId = wrap.dataset.postId;
+    const type = target.dataset.type;
+    const btn = wrap.querySelector('.like-btn');
+    if (!btn) return;
+    fetch(`/post/${postId}/react/?type=${type}`)
+        .then(r => r.json())
+        .then(data => {
+            const icon = btn.querySelector('.reaction-icon');
+            const countSpan = btn.querySelector(`.reaction-count-${postId}`);
+            if (data.reaction) {
+                btn.classList.add('liked');
+                icon.textContent = reactionEmojis[data.reaction];
+            } else {
+                btn.classList.remove('liked');
+                icon.textContent = '👍';
+            }
+            countSpan.textContent = data.total;
+            btn.classList.add('heart-animate');
+            setTimeout(() => btn.classList.remove('heart-animate'), 400);
+        });
+});
+
+document.addEventListener('click', function(e) {
+    const toggle = e.target.closest('.comment-toggle');
+    if (!toggle) return;
+    const postId = toggle.dataset.postId;
+    const section = document.getElementById(`comments-${postId}`);
+    if (section) {
+        section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    }
+});
+
+let loading = false;
+let offset = {{ posts|length }};
+const trigger = document.getElementById('load-more-trigger');
+const spinner = document.getElementById('load-spinner');
+const container = document.getElementById('posts-container');
+
+if (trigger) {
+    const observer = new IntersectionObserver(async (entries) => {
+        for (const entry of entries) {
+            if (entry.isIntersecting && !loading) {
+                loading = true;
+                spinner.style.display = 'inline-block';
+                const hashtag = trigger.dataset.hashtag || '';
+                try {
+                    const params = new URLSearchParams({ offset });
+                    if (hashtag) params.set('hashtag', hashtag);
+                    const r = await fetch(`/load-more/?${params}`);
+                    const data = await r.json();
+                    container.insertAdjacentHTML('beforeend', data.html);
+                    offset += {{ posts|length }};
+                    if (!data.has_more) {
+                        trigger.style.display = 'none';
+                        observer.disconnect();
+                    }
+                } catch (e) {}
+                spinner.style.display = 'none';
+                loading = false;
+            }
+        }
+    }, { threshold: 0.5 });
+    observer.observe(trigger);
+}
+</script>
+{% endblock %}
